@@ -161,10 +161,11 @@ contract SupplierFinancing {
     }
 
     // 更新指定 key 和 timestamp 对应的票据金额。
-    function updateReceipt(string memory tableName, string memory key, uint timestamp, uint newAmount) private {
+    function updateReceipt(string memory tableName, string memory key, string memory addr, uint timestamp, uint newAmount) private {
         Table receipt = openTable(tableName);
         Condition condition = receipt.newCondition();
         condition.EQ("timestamp", int(timestamp));
+        condition.EQ("addr", addr);
         if (newAmount <= 0) {
             receipt.remove(key, condition);
             return;
@@ -185,7 +186,7 @@ contract SupplierFinancing {
         uint timestamp = block.timestamp;
         insertReceipt("Receipts_out", toString(msg.sender), receiver, amount, timestamp, validity);
         insertReceipt("Receipts_in", toString(receiver), msg.sender, amount, timestamp, validity);
-        emit BalanceTransactionEvent(msg.sender, receiver, amount);
+        emit CreditTransactionEvent(msg.sender, receiver, amount);
     }
 
     function tradingWithReceipt(address receiver, uint amount, uint timestamp) public {
@@ -200,8 +201,8 @@ contract SupplierFinancing {
         uint receiptAmount = entry.getUInt("amount");
         uint validity = entry.getUInt("validity");
         require(receiptAmount >= amount, "You does not have enough receipt");
-        updateReceipt("Receipts_out", toString(addr), timestamp, receiptAmount - amount);
-        updateReceipt("Receipts_in", toString(msg.sender), timestamp, receiptAmount - amount);
+        updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
+        updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
         
         entries = receipt.select(toString(receiver), condition);
         require(entries.size() <= 1, "receipt must not exists or be unique");
@@ -212,10 +213,80 @@ contract SupplierFinancing {
             insertReceipt("Receipts_in", toString(receiver), addr, amount, timestamp, validity);
         }
         else {
-            updateReceipt("Receipts_out", toString(addr), timestamp, receiptAmount + amount);
-            updateReceipt("Receipts_in", toString(receiver), timestamp, receiptAmount + amount);
+            updateReceipt("Receipts_out", toString(addr), toString(receiver), timestamp, receiptAmount + amount);
+            updateReceipt("Receipts_in", toString(receiver), toString(addr), timestamp, receiptAmount + amount);
         }
-        emit BalanceTransactionEvent(msg.sender, receiver, amount);
+        emit CreditTransactionEvent(msg.sender, receiver, amount);
+    }
+
+    function financing(uint amount, uint timestamp) public {
+        require(amount > 0, "amount must be greater than zero");
+        Table receipt = openTable("Receipts_in");
+        Condition condition = receipt.newCondition();
+        condition.EQ("timestamp", int(timestamp));
+        Entries entries = receipt.select(toString(msg.sender), condition);
+        require(entries.size() == 1, "receipt does not exist or is not unique");
+        Entry entry = entries.get(0);
+        address addr = entry.getAddress("addr");
+        uint receiptAmount = entry.getUInt("amount");
+        uint validity = entry.getUInt("validity");
+        require(receiptAmount >= amount, "You does not have enough receipt");
+
+        uint balance = getCompanyBalance(adminAddr);
+        require(balance >= amount, "Admin does not have enough balance");
+
+        updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
+        updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
+        
+        entries = receipt.select(toString(adminAddr), condition);
+        require(entries.size() <= 1, "receipt must not exist or be unique");
+        entry = entries.get(0);
+        receiptAmount = entry.getUInt("amount");
+        if(entries.size() == 0) {
+            insertReceipt("Receipts_out", toString(addr), adminAddr, amount, timestamp, validity);
+            insertReceipt("Receipts_in", toString(adminAddr), addr, amount, timestamp, validity);
+        }
+        else {
+            updateReceipt("Receipts_out", toString(addr), toString(adminAddr), timestamp, receiptAmount + amount);
+            updateReceipt("Receipts_in", toString(adminAddr), toString(addr), timestamp, receiptAmount + amount);
+        }
+        updateCompanyBalance(adminAddr, balance - amount);
+        updateCompanyBalance(msg.sender, getCompanyBalance(msg.sender) + amount);
+
+        emit CreditTransactionEvent(msg.sender, adminAddr, amount);
+        emit BalanceTransactionEvent(adminAddr, msg.sender, amount);
+    }
+
+    function arrearsPaying(uint timestamp) public {
+        Table receipt = openTable("Receipts_out");
+        Condition condition = receipt.newCondition();
+        condition.EQ("timestamp", int(timestamp));
+        Entries entries = receipt.select(toString(msg.sender), condition);
+
+        Entry entry;
+        address addr;
+        uint receiptAmount;
+        uint validity;
+        uint timestampNow = block.timestamp;
+        uint balance;
+        for (int i = 0; i < entries.size(); i++) {
+            entry = entries.get(i);
+            addr = entry.getAddress("addr");
+            receiptAmount = entry.getUInt("amount");
+            validity = entry.getUInt("validity");
+            balance = getCompanyBalance(msg.sender);
+            require(balance >= receiptAmount, "You does not have enough balance");
+            updateReceipt("Receipts_out", toString(msg.sender), toString(addr), timestamp, 0);
+            updateReceipt("Receipts_in", toString(addr), toString(msg.sender), timestamp, 0);
+            updateCompanyBalance(msg.sender, balance - receiptAmount);
+            updateCompanyBalance(addr, getCompanyBalance(addr) + receiptAmount);
+            uint amount = 0;
+            if(timestampNow > timestamp + validity) amount = (timestampNow - timestamp - validity) / 3600;
+            updateCompanyCredit(msg.sender, getCompanyCredit(msg.sender) + receiptAmount - amount);
+            emit CreditTransactionEvent(msg.sender, addr, receiptAmount);
+            emit BalanceTransactionEvent(addr, msg.sender, receiptAmount);
+        }
+
     }
 
     // 转换地址为字符串。
