@@ -114,24 +114,15 @@ contract SupplierFinancing {
 
     // 转换地址为字符串。
     function toString(address x) private returns (string memory) {
-        bytes32 value = bytes32(uint256(x));
-        bytes memory alphabet = "0123456789abcdef";
-        bytes memory str = new bytes(42);
-        str[0] = '0';
-        str[1] = 'x';
-        for (uint i = 0; i < 20; i++) {
-            str[2+i*2] = alphabet[uint(value[i + 12] >> 4)];
-            str[3+i*2] = alphabet[uint(value[i + 12] & 0x0f)];
-        }
-        return string(str);
+        return uint2String(uint256(x),40);
     }
 
-    function uint2String(uint value) public view returns (string memory _ret) {
+    function uint2String(uint value,uint len) public view returns (string memory _ret) {
         bytes memory alphabet = "0123456789abcdef";
-        bytes memory str = new bytes(10);
+        bytes memory str = new bytes(2+len);
         str[0] = '0';
         str[1] = 'x';
-        for (uint i = 9; i >= 2; i--) {
+        for (uint i = 1+len; i >= 2; i--) {
             str[i] = alphabet[value & 0xf];
             value/=0xf;
         }
@@ -139,10 +130,10 @@ contract SupplierFinancing {
     }
     
     function ResceiptToString(Receipt memory r) private view returns (string memory,string memory,string memory,string memory) {
-        string memory amount = uint2String(r.amount);
+        string memory amount = uint2String(r.amount,8);
         string memory addr = toString(r.addr);
-        string memory timestamp = uint2String(r.timestamp);
-        string memory validity = uint2String(r.validity);
+        string memory timestamp = uint2String(r.timestamp,8);
+        string memory validity = uint2String(r.validity,8);
         return (amount,addr,timestamp,validity);
     }
     function ResceiptsToString(Receipt[] memory receipts) private view returns (string[] memory,string[] memory,string[] memory,string[] memory) {
