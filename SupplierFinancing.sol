@@ -245,18 +245,19 @@ contract SupplierFinancing {
         require(receiptAmount >= amount, "You does not have enough receipt");
         require(timestamp + validity > timestampNOW, "Your receipt is out of date");
         
+        entries = receipt.select(toString(receiver), condition);
+        require(entries.size() <= 1, "receipt must not exists or be unique")
+        
         updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
         updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
-        
-        entries = receipt.select(toString(receiver), condition);
-        require(entries.size() <= 1, "receipt must not exists or be unique");
-        entry = entries.get(0);
-        receiptAmount = entry.getUInt("amount");
+
         if(entries.size() == 0) {
             insertReceipt("Receipts_out", toString(addr), receiver, amount, timestamp, validity);
             insertReceipt("Receipts_in", toString(receiver), addr, amount, timestamp, validity);
         }
         else {
+            entry = entries.get(0);
+            receiptAmount = entry.getUInt("amount");
             updateReceipt("Receipts_out", toString(addr), toString(receiver), timestamp, receiptAmount + amount);
             updateReceipt("Receipts_in", toString(receiver), toString(addr), timestamp, receiptAmount + amount);
         }
@@ -279,18 +280,19 @@ contract SupplierFinancing {
         uint balance = getCompanyBalance(adminAddr);
         require(balance >= amount, "Admin does not have enough balance");
 
+        entries = receipt.select(toString(adminAddr), condition);
+        require(entries.size() <= 1, "receipt must not exist or be unique");
+
         updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
         updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
         
-        entries = receipt.select(toString(adminAddr), condition);
-        require(entries.size() <= 1, "receipt must not exist or be unique");
-        entry = entries.get(0);
-        receiptAmount = entry.getUInt("amount");
         if(entries.size() == 0) {
             insertReceipt("Receipts_out", toString(addr), adminAddr, amount, timestamp, validity);
             insertReceipt("Receipts_in", toString(adminAddr), addr, amount, timestamp, validity);
         }
         else {
+            entry = entries.get(0);
+            receiptAmount = entry.getUInt("amount");
             updateReceipt("Receipts_out", toString(addr), toString(adminAddr), timestamp, receiptAmount + amount);
             updateReceipt("Receipts_in", toString(adminAddr), toString(addr), timestamp, receiptAmount + amount);
         }
