@@ -111,9 +111,43 @@ contract SupplierFinancing {
         return getCompanyBalance(msg.sender);
     }
 
-    function ResceiptToString(Receipt[] memory list) private view returns (string memory) {
-        
+    function uint2String(uint value) public view returns (string memory _ret) {
+        bytes memory alphabet = "0123456789abcdef";
+        bytes memory str = new bytes(10);
+        str[0] = '0';
+        str[1] = 'x';
+        for (uint i = 8; i >= 2; i--) {
+            str[i] = alphabet[value & 0xf];
+            value/=0xf;
+        }
+        return string(str);
     }
+    
+    function ResceiptToString(Receipt memory r) private view returns (string memory,string memory,string memory,string memory) {
+        string memory amount = uint2String(r.amount);
+        string memory addr = toString(r.addr);
+        string memory timestamp = uint2String(r.timestamp);
+        string memory validity = uint2String(r.validity);
+        return (amount,addr,timestamp,validity);
+    }
+    function ResceiptsToString(Receipt[] memory receipts) private view returns (string[] memory,string[] memory,string[] memory,string[] memory) {
+        uint len = receipts.length;
+        string[] memory amounts = new string[](len);
+        string[] memory addrs = new string[](len);
+        string[] memory timestamps = new string[](len);
+        string[] memory validitys = new string[](len);
+        for(uint i = 0 ; i < len ; i++){
+            (amounts[i],addrs[i],timestamps[i],validitys[i]) = ResceiptToString(receipts[i]);
+        }
+        return (amounts,addrs,timestamps,validitys);
+    }
+    // function test() public view returns(string[] memory,string[] memory,string[] memory,string[] memory){
+    //     Receipt[] memory list2 = new Receipt[](3);
+    //     list2[0] = Receipt(100,0x1111111111111111111111111111111111111111,1,2);
+    //     list2[1] = Receipt(200,0x1111112111111111111111111111111111111112,4,6);
+    //     list2[2] = Receipt(13000,0x1111111111111111111111111111111111111113,12,32);
+    //     return ResceiptsToString(list2);
+    // }
 
     function getReceiptsInList() public view returns (string memory) {
         Table company = openTable("Receipts_in");
