@@ -1,4 +1,5 @@
 pragma solidity>=0.4.24 <0.9.11;
+pragma experimental ABIEncoderV2;
 import "./Table.sol";
 
 contract SupplierFinancing {
@@ -111,12 +112,26 @@ contract SupplierFinancing {
         return getCompanyBalance(msg.sender);
     }
 
+    // 转换地址为字符串。
+    function toString(address x) private returns (string memory) {
+        bytes32 value = bytes32(uint256(x));
+        bytes memory alphabet = "0123456789abcdef";
+        bytes memory str = new bytes(42);
+        str[0] = '0';
+        str[1] = 'x';
+        for (uint i = 0; i < 20; i++) {
+            str[2+i*2] = alphabet[uint(value[i + 12] >> 4)];
+            str[3+i*2] = alphabet[uint(value[i + 12] & 0x0f)];
+        }
+        return string(str);
+    }
+
     function uint2String(uint value) public view returns (string memory _ret) {
         bytes memory alphabet = "0123456789abcdef";
         bytes memory str = new bytes(10);
         str[0] = '0';
         str[1] = 'x';
-        for (uint i = 8; i >= 2; i--) {
+        for (uint i = 9; i >= 2; i--) {
             str[i] = alphabet[value & 0xf];
             value/=0xf;
         }
@@ -149,7 +164,7 @@ contract SupplierFinancing {
     //     return ResceiptsToString(list2);
     // }
 
-    function getReceiptsInList() public view returns (string memory) {
+    function getReceiptsInList() public view returns (string[] memory,string[] memory,string[] memory,string[] memory) {
         Table company = openTable("Receipts_in");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         int size = entries.size();
@@ -158,10 +173,10 @@ contract SupplierFinancing {
             //有则返回
             list[uint(i)] = Receipt(entries.get(i).getUInt("amount"), entries.get(i).getAddress("from"), entries.get(i).getUInt("timestamp"), entries.get(i).getUInt("validity"));
         }
-        return ResceiptToString(list);
+        return ResceiptsToString(list);
     }
 
-    function getReceiptsOutList() public view returns (string memory) {
+    function getReceiptsOutList() public view returns (string[] memory,string[] memory,string[] memory,string[] memory) {
         Table company = openTable("Receipts_out");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         int size = entries.size();
@@ -170,7 +185,7 @@ contract SupplierFinancing {
             //有则返回
             list[uint(i)] = Receipt(entries.get(i).getUInt("amount"), entries.get(i).getAddress("from"), entries.get(i).getUInt("timestamp"), entries.get(i).getUInt("validity"));
         }
-        return ResceiptToString(list);
+        return ResceiptsToString(list);
     }
 
     function tradingWithBalance(address receiver, uint amount) public {
@@ -321,20 +336,6 @@ contract SupplierFinancing {
             emit BalanceTransactionEvent(addr, msg.sender, receiptAmount);
         }
 
-    }
-
-    // 转换地址为字符串。
-    function toString(address x) private returns (string memory) {
-        bytes32 value = bytes32(uint256(x));
-        bytes memory alphabet = "0123456789abcdef";
-        bytes memory str = new bytes(42);
-        str[0] = '0';
-        str[1] = 'x';
-        for (uint i = 0; i < 20; i++) {
-            str[2+i*2] = alphabet[uint(value[i + 12] >> 4)];
-            str[3+i*2] = alphabet[uint(value[i + 12] & 0x0f)];
-        }
-        return string(str);
     }
 
 }
