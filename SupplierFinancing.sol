@@ -20,7 +20,7 @@ contract SupplierFinancing {
     // 信用凭证销毁事件
     event ReturnEvent(address from, address to, uint amount);
 
-    constructor() {
+    constructor() public {
         adminAddr = msg.sender;
         // 创建表。
         TableFactory tf = TableFactory(0x1001);
@@ -236,11 +236,15 @@ contract SupplierFinancing {
         condition.EQ("timestamp", int(timestamp));
         Entries entries = receipt.select(toString(msg.sender), condition);
         require(entries.size() == 1, "receipt does not exists or is not unique");
+
+        uint timestampNOW = block.timestamp;
         Entry entry = entries.get(0);
         address addr = entry.getAddress("addr");
         uint receiptAmount = entry.getUInt("amount");
         uint validity = entry.getUInt("validity");
         require(receiptAmount >= amount, "You does not have enough receipt");
+        require(timestamp + validity > timestampNOW, "Your receipt is out of date");
+        
         updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
         updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
         
