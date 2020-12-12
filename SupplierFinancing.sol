@@ -32,7 +32,7 @@ contract SupplierFinancing {
     }
 
     // 打开指定名称的 AMDB 表。
-    function openTable(string memory tableName) private returns(Table) {
+    function openTable(string memory tableName) private view returns(Table) {
         TableFactory tf = TableFactory(0x1001);
         return tf.openTable(tableName);
     }
@@ -113,11 +113,11 @@ contract SupplierFinancing {
     }
 
     // 转换地址为字符串。
-    function toString(address x) private returns (string memory) {
+    function toString(address x) private view returns (string memory) {
         return uint2String(uint256(x),40);
     }
 
-    function uint2String(uint value,uint len) public view returns (string memory _ret) {
+    function uint2String(uint value,uint len) private view returns (string memory _ret) {
         bytes memory alphabet = "0123456789abcdef";
         bytes memory str = new bytes(2+len);
         str[0] = '0';
