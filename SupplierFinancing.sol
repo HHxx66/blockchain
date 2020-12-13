@@ -124,44 +124,19 @@ contract SupplierFinancing {
         str[1] = 'x';
         for (uint i = 1+len; i >= 2; i--) {
             str[i] = alphabet[value & 0xf];
-            value/=0xf;
+            value = value >> 4;
         }
         return string(str);
     }
-    
-    // function ResceiptToString(Receipt memory r) private view returns (uint, string memory, uint, uint) {
-    //     uint amount = r.amount;
-    //     string memory addr = toString(r.addr);
-    //     uint timestamp = r.timestamp;
-    //     uint validity = r.validity;
-    //     return (amount,addr,timestamp,validity);
-    // }
-    // function ResceiptsToString(Receipt[] memory receipts) private view returns (uint[] memory, string[] memory, uint[] memory, uint[] memory) {
-    //     uint len = receipts.length;
-    //     uint[] memory amounts = new uint[](len);
-    //     string[] memory addrs = new string[](len);
-    //     uint[] memory timestamps = new uint[](len);
-    //     uint[] memory validitys = new uint[](len);
-    //     for(uint i = 0 ; i < len ; i++){
-    //         (amounts[i],addrs[i],timestamps[i],validitys[i]) = ResceiptToString(receipts[i]);
-    //     }
-    //     return (amounts,addrs,timestamps,validitys);
-    // }
-    // // function test() public view returns(string[] memory,string[] memory,string[] memory,string[] memory){
-    // //     Receipt[] memory list2 = new Receipt[](3);
-    // //     list2[0] = Receipt(100,0x1111111111111111111111111111111111111111,1,2);
-    // //     list2[1] = Receipt(200,0x1111112111111111111111111111111111111112,4,6);
-    // //     list2[2] = Receipt(13000,0x1111111111111111111111111111111111111113,12,32);
-    // //     return ResceiptsToString(list2);
-    // // }
 
-    function getReceiptsInList() public view returns (uint[] memory,address[] memory,uint[] memory,uint[] memory) {
+    function getReceiptsInList() public view returns (uint[] memory,address[] memory,string[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_in");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         Entry entry;
         uint size = uint(entries.size());
         uint[] memory amounts = new uint[](size);
         address[] memory addrs = new address[](size);
+        string[] memory addrsStr = new string[](size);
         uint[] memory timestamps = new uint[](size);
         uint[] memory validitys = new uint[](size);
         for(uint i = 0; i < size; i++){
@@ -169,19 +144,21 @@ contract SupplierFinancing {
             entry = entries.get(int(i));
             amounts[i] = entry.getUInt("amount");
             addrs[i] = entry.getAddress("addr");
+            addrsStr[i] = toString(entry.getAddress("addr"));
             timestamps[i] = entry.getUInt("timestamp");
             validitys[i] = entry.getUInt("validity");
         }
-        return (amounts,addrs,timestamps,validitys);
+        return (amounts,addrs,addrsStr,timestamps,validitys);
     }
 
-    function getReceiptsOutList() public view returns (uint[] memory,address[] memory,uint[] memory,uint[] memory) {
+    function getReceiptsOutList() public view returns (uint[] memory,address[] memory,string[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_out");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         Entry entry;
         uint size = uint(entries.size());
         uint[] memory amounts = new uint[](size);
         address[] memory addrs = new address[](size);
+        string[] memory addrsStr = new string[](size);
         uint[] memory timestamps = new uint[](size);
         uint[] memory validitys = new uint[](size);
         for(uint i = 0; i < size; i++){
@@ -189,10 +166,11 @@ contract SupplierFinancing {
             entry = entries.get(int(i));
             amounts[i] = entry.getUInt("amount");
             addrs[i] = entry.getAddress("addr");
+            addrsStr[i] = toString(entry.getAddress("addr"));
             timestamps[i] = entry.getUInt("timestamp");
             validitys[i] = entry.getUInt("validity");
         }
-        return (amounts,addrs,timestamps,validitys);
+        return (amounts,addrs,addrsStr,timestamps,validitys);
     }
 
     function tradingWithBalance(address receiver, uint amount) public {
@@ -217,20 +195,26 @@ contract SupplierFinancing {
     }
 
     // 更新指定 key 和 timestamp 对应的票据金额。
-    function updateReceipt(string memory tableName, string memory key, string memory addr, uint timestamp, uint newAmount) private {
+    function updateReceipt(string memory tableName, string memory key, address addr, uint timestamp, uint newAmount) private {
         Table receipt = openTable(tableName);
         Condition condition = receipt.newCondition();
         condition.EQ("timestamp", int(timestamp));
-        condition.EQ("addr", addr);
-        if (newAmount <= 0) {
-            receipt.remove(key, condition);
-            return;
-        }
         Entries entries = receipt.select(key, condition);
-        require(entries.size() == 1, "receipt not exists or unique");
-        Entry entry = entries.get(0);
-        entry.set("amount", newAmount);
-        receipt.update(key, entry, condition);
+        require(entries.size() >= 1, "receipt not exists");
+        receipt.remove(key, condition);
+        for(int i = 0; i < entries.size(); i++) {
+            Entry entry = entries.get(i);
+            address addr_ = entry.getAddress("addr");
+            if(addr_ == addr) {
+                if(newAmount != 0) {
+                    entry.set("amount", newAmount);
+                    receipt.insert(key, entry);
+                }
+            }
+            else {
+                receipt.insert(key, entry);
+            }
+        }
     }
 
 
@@ -265,8 +249,8 @@ contract SupplierFinancing {
         entries = receipt.select(toString(receiver), condition);
         require(entries.size() <= 1, "receipt must not exists or be unique");
         
-        updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
-        updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
+        updateReceipt("Receipts_out", toString(addr), msg.sender, timestamp, receiptAmount - amount);
+        updateReceipt("Receipts_in", toString(msg.sender), addr, timestamp, receiptAmount - amount);
 
         if(entries.size() == 0) {
             insertReceipt("Receipts_out", toString(addr), receiver, amount, timestamp, validity);
@@ -275,8 +259,8 @@ contract SupplierFinancing {
         else {
             entry = entries.get(0);
             receiptAmount = entry.getUInt("amount");
-            updateReceipt("Receipts_out", toString(addr), toString(receiver), timestamp, receiptAmount + amount);
-            updateReceipt("Receipts_in", toString(receiver), toString(addr), timestamp, receiptAmount + amount);
+            updateReceipt("Receipts_out", toString(addr), receiver, timestamp, receiptAmount + amount);
+            updateReceipt("Receipts_in", toString(receiver), addr, timestamp, receiptAmount + amount);
         }
         emit CreditTransactionEvent(msg.sender, receiver, amount);
     }
@@ -300,8 +284,8 @@ contract SupplierFinancing {
         entries = receipt.select(toString(adminAddr), condition);
         require(entries.size() <= 1, "receipt must not exist or be unique");
 
-        updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
-        updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
+        updateReceipt("Receipts_out", toString(addr), msg.sender, timestamp, receiptAmount - amount);
+        updateReceipt("Receipts_in", toString(msg.sender), addr, timestamp, receiptAmount - amount);
         
         if(entries.size() == 0) {
             insertReceipt("Receipts_out", toString(addr), adminAddr, amount, timestamp, validity);
@@ -310,8 +294,8 @@ contract SupplierFinancing {
         else {
             entry = entries.get(0);
             receiptAmount = entry.getUInt("amount");
-            updateReceipt("Receipts_out", toString(addr), toString(adminAddr), timestamp, receiptAmount + amount);
-            updateReceipt("Receipts_in", toString(adminAddr), toString(addr), timestamp, receiptAmount + amount);
+            updateReceipt("Receipts_out", toString(addr), adminAddr, timestamp, receiptAmount + amount);
+            updateReceipt("Receipts_in", toString(adminAddr), addr, timestamp, receiptAmount + amount);
         }
         updateCompanyBalance(adminAddr, balance - amount);
         updateCompanyBalance(msg.sender, getCompanyBalance(msg.sender) + amount);
@@ -339,8 +323,8 @@ contract SupplierFinancing {
             validity = entry.getUInt("validity");
             balance = getCompanyBalance(msg.sender);
             require(balance >= receiptAmount, "You does not have enough balance");
-            updateReceipt("Receipts_out", toString(msg.sender), toString(addr), timestamp, 0);
-            updateReceipt("Receipts_in", toString(addr), toString(msg.sender), timestamp, 0);
+            updateReceipt("Receipts_out", toString(msg.sender), addr, timestamp, 0);
+            updateReceipt("Receipts_in", toString(addr), msg.sender, timestamp, 0);
             updateCompanyBalance(msg.sender, balance - receiptAmount);
             updateCompanyBalance(addr, getCompanyBalance(addr) + receiptAmount);
             uint amount = 0;
