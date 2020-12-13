@@ -129,54 +129,70 @@ contract SupplierFinancing {
         return string(str);
     }
     
-    function ResceiptToString(Receipt memory r) private view returns (uint, string memory, uint, uint) {
-        uint amount = r.amount;
-        string memory addr = toString(r.addr);
-        uint timestamp = r.timestamp;
-        uint validity = r.validity;
-        return (amount,addr,timestamp,validity);
-    }
-    function ResceiptsToString(Receipt[] memory receipts) private view returns (uint[] memory, string[] memory, uint[] memory, uint[] memory) {
-        uint len = receipts.length;
-        uint[] memory amounts = new uint[](len);
-        string[] memory addrs = new string[](len);
-        uint[] memory timestamps = new uint[](len);
-        uint[] memory validitys = new uint[](len);
-        for(uint i = 0 ; i < len ; i++){
-            (amounts[i],addrs[i],timestamps[i],validitys[i]) = ResceiptToString(receipts[i]);
-        }
-        return (amounts,addrs,timestamps,validitys);
-    }
-    // function test() public view returns(string[] memory,string[] memory,string[] memory,string[] memory){
-    //     Receipt[] memory list2 = new Receipt[](3);
-    //     list2[0] = Receipt(100,0x1111111111111111111111111111111111111111,1,2);
-    //     list2[1] = Receipt(200,0x1111112111111111111111111111111111111112,4,6);
-    //     list2[2] = Receipt(13000,0x1111111111111111111111111111111111111113,12,32);
-    //     return ResceiptsToString(list2);
+    // function ResceiptToString(Receipt memory r) private view returns (uint, string memory, uint, uint) {
+    //     uint amount = r.amount;
+    //     string memory addr = toString(r.addr);
+    //     uint timestamp = r.timestamp;
+    //     uint validity = r.validity;
+    //     return (amount,addr,timestamp,validity);
     // }
+    // function ResceiptsToString(Receipt[] memory receipts) private view returns (uint[] memory, string[] memory, uint[] memory, uint[] memory) {
+    //     uint len = receipts.length;
+    //     uint[] memory amounts = new uint[](len);
+    //     string[] memory addrs = new string[](len);
+    //     uint[] memory timestamps = new uint[](len);
+    //     uint[] memory validitys = new uint[](len);
+    //     for(uint i = 0 ; i < len ; i++){
+    //         (amounts[i],addrs[i],timestamps[i],validitys[i]) = ResceiptToString(receipts[i]);
+    //     }
+    //     return (amounts,addrs,timestamps,validitys);
+    // }
+    // // function test() public view returns(string[] memory,string[] memory,string[] memory,string[] memory){
+    // //     Receipt[] memory list2 = new Receipt[](3);
+    // //     list2[0] = Receipt(100,0x1111111111111111111111111111111111111111,1,2);
+    // //     list2[1] = Receipt(200,0x1111112111111111111111111111111111111112,4,6);
+    // //     list2[2] = Receipt(13000,0x1111111111111111111111111111111111111113,12,32);
+    // //     return ResceiptsToString(list2);
+    // // }
 
     function getReceiptsInList() public view returns (uint[] memory,string[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_in");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
-        int size = entries.size();
-        Receipt[] memory list = new Receipt[](uint256(size));
-        for(int i = 0; i < size; i++){
+        Entry entry;
+        uint size = uint(entries.size());
+        uint[] memory amounts = new uint[](size);
+        string[] memory addrs = new string[](size);
+        uint[] memory timestamps = new uint[](size);
+        uint[] memory validitys = new uint[](size);
+        for(uint i = 0; i < size; i++){
             //有则返回
-            list[uint(i)] = Receipt(entries.get(i).getUInt("amount"), entries.get(i).getAddress("from"), entries.get(i).getUInt("timestamp"), entries.get(i).getUInt("validity"));
+            entry = entries.get(int(i));
+            amounts[i] = entry.getUInt("amount");
+            addrs[i] = toString(entry.getAddress("addr"));
+            timestamps[i] = entry.getUInt("timestamp");
+            validitys[i] = entry.getUInt("validity");
         }
-        return ResceiptsToString(list);
+        return (amounts,addrs,timestamps,validitys);
     }
 
     function getReceiptsOutList() public view returns (uint[] memory,string[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_out");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
-        int size = entries.size();
-        Receipt[] memory list = new Receipt[](uint256(size));
-        for(int i = 0; i < size; i++){
+        Entry entry;
+        uint size = uint(entries.size());
+        uint[] memory amounts = new uint[](size);
+        string[] memory addrs = new string[](size);
+        uint[] memory timestamps = new uint[](size);
+        uint[] memory validitys = new uint[](size);
+        for(uint i = 0; i < size; i++){
             //有则返回
-            list[uint(i)] = Receipt(entries.get(i).getUInt("amount"), entries.get(i).getAddress("from"), entries.get(i).getUInt("timestamp"), entries.get(i).getUInt("validity"));
+            entry = entries.get(int(i));
+            amounts[i] = entry.getUInt("amount");
+            addrs[i] = toString(entry.getAddress("addr"));
+            timestamps[i] = entry.getUInt("timestamp");
+            validitys[i] = entry.getUInt("validity");
         }
-        return ResceiptsToString(list);
+        return (amounts,addrs,timestamps,validitys);
     }
 
     function tradingWithBalance(address receiver, uint amount) public {
