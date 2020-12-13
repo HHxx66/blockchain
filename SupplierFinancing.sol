@@ -129,19 +129,19 @@ contract SupplierFinancing {
         return string(str);
     }
     
-    function ResceiptToString(Receipt memory r) private view returns (string memory,string memory,string memory,string memory) {
-        string memory amount = uint2String(r.amount,8);
+    function ResceiptToString(Receipt memory r) private view returns (uint, string memory, uint, uint) {
+        uint amount = r.amount;
         string memory addr = toString(r.addr);
-        string memory timestamp = uint2String(r.timestamp,8);
-        string memory validity = uint2String(r.validity,8);
+        uint timestamp = r.timestamp;
+        uint validity = r.validity;
         return (amount,addr,timestamp,validity);
     }
-    function ResceiptsToString(Receipt[] memory receipts) private view returns (string[] memory,string[] memory,string[] memory,string[] memory) {
+    function ResceiptsToString(Receipt[] memory receipts) private view returns (uint[] memory, string[] memory, uint[] memory, uint[] memory) {
         uint len = receipts.length;
-        string[] memory amounts = new string[](len);
+        uint[] memory amounts = new uint[](len);
         string[] memory addrs = new string[](len);
-        string[] memory timestamps = new string[](len);
-        string[] memory validitys = new string[](len);
+        uint[] memory timestamps = new uint[](len);
+        uint[] memory validitys = new uint[](len);
         for(uint i = 0 ; i < len ; i++){
             (amounts[i],addrs[i],timestamps[i],validitys[i]) = ResceiptToString(receipts[i]);
         }
@@ -155,7 +155,7 @@ contract SupplierFinancing {
     //     return ResceiptsToString(list2);
     // }
 
-    function getReceiptsInList() public view returns (string[] memory,string[] memory,string[] memory,string[] memory) {
+    function getReceiptsInList() public view returns (uint[] memory,string[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_in");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         int size = entries.size();
@@ -167,7 +167,7 @@ contract SupplierFinancing {
         return ResceiptsToString(list);
     }
 
-    function getReceiptsOutList() public view returns (string[] memory,string[] memory,string[] memory,string[] memory) {
+    function getReceiptsOutList() public view returns (uint[] memory,string[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_out");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         int size = entries.size();
@@ -192,7 +192,7 @@ contract SupplierFinancing {
     function insertReceipt(string memory tableName, string memory key, address addr, uint amount, uint timestamp, uint validity) private {
         Table receipt = openTable(tableName);
         Entry entry = receipt.newEntry();
-        entry.set("addr", toString(addr));
+        entry.set("addr", addr);
         entry.set("amount", amount);
         entry.set("timestamp", timestamp);
         entry.set("validity", validity);
@@ -224,6 +224,7 @@ contract SupplierFinancing {
         require(credit >= amount, "You does not have enough credit");
         updateCompanyCredit(msg.sender, credit - amount);
         uint timestamp = block.timestamp;
+        validity = validity * 3600 * 24;
         insertReceipt("Receipts_out", toString(msg.sender), receiver, amount, timestamp, validity);
         insertReceipt("Receipts_in", toString(receiver), msg.sender, amount, timestamp, validity);
         emit CreditTransactionEvent(msg.sender, receiver, amount);
@@ -246,7 +247,7 @@ contract SupplierFinancing {
         require(timestamp + validity > timestampNOW, "Your receipt is out of date");
         
         entries = receipt.select(toString(receiver), condition);
-        require(entries.size() <= 1, "receipt must not exists or be unique")
+        require(entries.size() <= 1, "receipt must not exists or be unique");
         
         updateReceipt("Receipts_out", toString(addr), toString(msg.sender), timestamp, receiptAmount - amount);
         updateReceipt("Receipts_in", toString(msg.sender), toString(addr), timestamp, receiptAmount - amount);
