@@ -155,40 +155,40 @@ contract SupplierFinancing {
     // //     return ResceiptsToString(list2);
     // // }
 
-    function getReceiptsInList() public view returns (uint[] memory,string[] memory,uint[] memory,uint[] memory) {
+    function getReceiptsInList() public view returns (uint[] memory,address[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_in");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         Entry entry;
         uint size = uint(entries.size());
         uint[] memory amounts = new uint[](size);
-        string[] memory addrs = new string[](size);
+        address[] memory addrs = new address[](size);
         uint[] memory timestamps = new uint[](size);
         uint[] memory validitys = new uint[](size);
         for(uint i = 0; i < size; i++){
             //有则返回
             entry = entries.get(int(i));
             amounts[i] = entry.getUInt("amount");
-            addrs[i] = toString(entry.getAddress("addr"));
+            addrs[i] = entry.getAddress("addr");
             timestamps[i] = entry.getUInt("timestamp");
             validitys[i] = entry.getUInt("validity");
         }
         return (amounts,addrs,timestamps,validitys);
     }
 
-    function getReceiptsOutList() public view returns (uint[] memory,string[] memory,uint[] memory,uint[] memory) {
+    function getReceiptsOutList() public view returns (uint[] memory,address[] memory,uint[] memory,uint[] memory) {
         Table company = openTable("Receipts_out");
         Entries entries = company.select(toString(msg.sender), company.newCondition());
         Entry entry;
         uint size = uint(entries.size());
         uint[] memory amounts = new uint[](size);
-        string[] memory addrs = new string[](size);
+        address[] memory addrs = new address[](size);
         uint[] memory timestamps = new uint[](size);
         uint[] memory validitys = new uint[](size);
         for(uint i = 0; i < size; i++){
             //有则返回
             entry = entries.get(int(i));
             amounts[i] = entry.getUInt("amount");
-            addrs[i] = toString(entry.getAddress("addr"));
+            addrs[i] = entry.getAddress("addr");
             timestamps[i] = entry.getUInt("timestamp");
             validitys[i] = entry.getUInt("validity");
         }
