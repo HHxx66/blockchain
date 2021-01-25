@@ -56,22 +56,35 @@ contract SupplyChainFinance {
     }
 
     function getReceiptsInList() public view returns (Receipt[] memory) {
-        Receipt[] list;
+        uint count = 0;
+        for(uint i = 0;i < Receipts_in[msg.sender].length; i++){
+            if(Receipts_in[msg.sender][i].amount != 0) {
+                count++;
+            }
+        }
+        Receipt[] memory list = new Receipt[](count);
         for(uint i = 0;i < Receipts_in[msg.sender].length; i++){
             //有则返回
             if(Receipts_in[msg.sender][i].amount != 0) {
-                list.push(Receipts_in[msg.sender][i]);
+                list[i] = Receipts_in[msg.sender][i];
             }
         }
         return list;
     }
 
     function getReceiptsOutList() public view returns (Receipt[] memory) {
-        Receipt[] list;
+        uint count = 0;
         for(uint i = 0;i < Receipts_out[msg.sender].length; i++){
             //有则返回
             if(Receipts_out[msg.sender][i].amount != 0) {
-                list.push(Receipts_out[msg.sender][i]);
+                count++;
+            }
+        }
+        Receipt[] memory list = new Receipt[](count);
+        for(uint i = 0;i < Receipts_out[msg.sender].length; i++){
+            //有则返回
+            if(Receipts_out[msg.sender][i].amount != 0) {
+                list[i] = Receipts_out[msg.sender][i];
             }
         }
         return list;
