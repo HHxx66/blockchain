@@ -1,0 +1,45 @@
+ .loadBox {
+     position: fixed;
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+ }
+
+ .firstLoad {
+     display: flex;
+     width: 50px;
+     height: 50px;
+     margin: 0 auto 15px;
+     border: 3px solid transparent;
+     border-top-color: #409eff;
+     border-bottom-color: #409eff;
+     border-radius: 50%;
+     animation: firstAni 0.8s linear infinite;
+ }
+
+ .firstLoad::before {
+     content: "";
+     display: block;
+     width: 12px;
+     height: 12px;
+     margin: auto;
+     border: 3px solid #409eff;
+     border-radius: 50%;
+     animation: firstAniA 0.5s alternate ease-in infinite;
+ }
+
+ @keyframes firstAni {
+     to {
+         transform: rotate(360deg);
+     }
+ }
+
+ @keyframes firstAniA {
+     from {
+         transform: scale(0.8);
+     }
+
+     to {
+         transform: scale(1.2);
+     }
+ }

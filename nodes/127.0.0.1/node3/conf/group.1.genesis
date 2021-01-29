@@ -1,0 +1,29 @@
+[consensus]
+    ; consensus algorithm now support PBFT(consensus_type=pbft), Raft(consensus_type=raft)
+    ; rpbft(consensus_type=rpbft)
+    consensus_type=pbft
+    ; the max number of transactions of a block
+    max_trans_num=1000
+    ; in seconds, block consensus timeout, at least 3s
+    consensus_timeout=3
+    ; rpbft related configuration
+    ; the working sealers num of each consensus epoch
+    epoch_sealer_num=4
+    ; the number of generated blocks each epoch
+    epoch_block_num=1000
+    ; the node id of consensusers
+    node.0=4c84ab7e4caab0b16c8fcd48cf6288b16fc8156f24eb05f1f50b468b608b197764a87fb86c5fcf210d010dbbfd277eb6dffa5ed0fd7a0e88196d357347ec16db
+    node.1=20a219b1cab4c0143424887d181c46e7f9cef743449d657fb96b7975ae2ea87d473eb13863f82b2500b237710ab49008d4bbe4cc8c41f0c4eec2b725b3d13a6d
+    node.2=1466a79378756d369bd88ce2bdb52d257822071321ba3c8b32bb5ff2580bc296d3b2216878bf42ef78f5f01bd2563cf2fe0cae4bca843d1a67e5dac7f05e7dbc
+    node.3=9d44f0620ffe80f91288e8fa5c42070bc41f1ec8e3605243139ebc19443bd7b020bdd02b701f39f961a82fb8641922ccdfd6402f27fb1c329b20fb2dc89f8b7a
+    
+[state]
+    type=storage
+[tx]
+    ; transaction gas limit
+    gas_limit=300000000
+[group]
+    id=1
+    timestamp=1611666386000
+[evm]
+    enable_free_storage=false

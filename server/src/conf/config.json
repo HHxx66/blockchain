@@ -1,0 +1,27 @@
+{
+    "encryptType": "ECDSA",
+    "accounts": {
+        "bank": {
+            "type": "pem",
+            "value": "./bank.pem"
+        },
+        "company": {
+            "type": "pem",
+            "value": "./company.pem"
+        }
+    },
+    "nodes": [
+        {
+            "ip": "127.0.0.1",
+            "port": "20200"
+        }
+    ],
+    "authentication": {
+        "key": "./sdk.key",
+        "cert": "./sdk.crt",
+        "ca": "./ca.crt"
+    },
+    "groupID": 1,
+    "chainID": 1,
+    "timeout": 10000
+}
