@@ -68,9 +68,9 @@ mapping (address => Receipt[]) private Receipts_in;
 
 要注册的话就得返回一对公私钥，在这里可以用到 FISCO BCOS 里面的一个``get_account.sh``脚本来产生，然后把从产生出来的文件里面提取出公钥地址和私钥返回给客户端。注意，前面说到服务端不负责保管用户的公私钥，因而返回之后就得把公私钥文件及时清除。
 
-对于服务端跟区块链的对接，我们在这里使用到的是 FISCO BCOS 官方提供的[nodejs-sdk](https://github.com/FISCO-BCOS/nodejs-sdk),主要的核心问题是实现智能合约调用过程中，``meg.sender``的定义。
+对于服务端跟区块链的对接，我们在这里使用到的是 FISCO BCOS 官方提供的[nodejs-sdk](https://github.com/FISCO-BCOS/nodejs-sdk),主要的核心问题是实现智能合约调用过程中，``msg.sender``的定义。
 
-经过一番稍有点痛苦而漫长的阅读sdk源码的过程中，我们可以利用``sendRawTransaction``里面的第四个参数``who``来实现不同的``meg.sender``。
+经过一番稍有点痛苦而漫长的阅读sdk源码的过程中，我们可以利用``sendRawTransaction``里面的第四个参数``who``来实现不同的``msg.sender``。
 
 ![](./assert/2.jpg)
 
@@ -112,7 +112,7 @@ mapping (address => Receipt[]) private Receipts_in;
 }
 ```
 
-我们这里的做法就是在 **accounts** 字段里增加一个 **company**，（ps：这里的 **bank** 对应的就是部署合约的中央银行的私钥文件）。后续再将私钥写进这个特定的``company.pem``，经过``Configuration``的解析，这样就能够解决``meg.sender``的问题了。
+我们这里的做法就是在 **accounts** 字段里增加一个 **company**，（ps：这里的 **bank** 对应的就是部署合约的中央银行的私钥文件）。后续再将私钥写进这个特定的``company.pem``，经过``Configuration``的解析，这样就能够解决``msg.sender``的问题了。
 
 以``getbalance``的调用为例，就是这样子：
 
@@ -138,7 +138,7 @@ export const getBalance = async (privateKey:string):Promise<any> => {
 
 由于黄星铭同学已经写好了API文档，所以前端可以直接通过这里的mock服务独立开发
 
-![api](api.jpg)
+![api](./assert/api.jpg)
 
 基本实现风格就是用表格来罗列信息，和用表单来办理业务  
 ![表格展示](./assert/4.jpg)  
@@ -187,7 +187,7 @@ export const getReceiptsInList = async (privateKey:string):Promise<any> => {
 
 在本次实验中，我们实现的是基于 FISCO-BCOS 的供应链金融项目，涵盖链端、服务端、客户端的开发，实验内容较为综合全面，对于区块链、Solidity、以及前端后端都有了更深一层的理解。
 
-较为不幸的是，实验过程稍有点坎坷，遇到的问题较多，比如``meg.sender``的问题、以及nodejs-sdk返回的合约运行结果的解析，都是不容易的事，（借此机会还阅读了大量的底层源码，收获匪浅）。不过也好在是小组工作，倒也提供了相互学习、相互谈论、共同合作的机会。
+较为不幸的是，实验过程稍有点坎坷，遇到的问题较多，比如``msg.sender``的问题、以及nodejs-sdk返回的合约运行结果的解析，都是不容易的事，（借此机会还阅读了大量的底层源码，收获匪浅）。不过也好在是小组工作，倒也提供了相互学习、相互谈论、共同合作的机会。
 
 最后，由于时间不太充裕，因而在合约的部署上有点做的不够好，或许可以将部署上的合约地址写进一个配置文件里面，这样就避免了现在这种服务器每次重启都得重新部署合约这样的尴尬局面。
 
