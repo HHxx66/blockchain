@@ -1,12 +1,16 @@
 # 项目设计说明
 
-|  组员  |   学号   |   分工    | 
-| :----: | :------: | :------: |
+|  组员  |   学号   |                   分工                   |
+| :----: | :------: | :--------------------------------------: |
 | 黄星铭 | 18342032 | 智能合约、API、后端路由sdk调用合约等事宜 |
 | 黄绍永 | 18342030 | nodejs-sdk、前后端框架、前端路由、页面等 |
-| 刘智斌 | 18342063 | 前端页面、合约功能测试 |
+| 刘智斌 | 18342063 |          前端页面、合约功能测试          |
 
 根据提供的供应链场景，基于从第二阶段设计出的智能合约，利用FISCO-BCOS提供的SDK编写前后端，完成最终制品。
+
+## 项目简介
+
+本项目是一款基于区块链的供应链金融平台。在传统的供应链金融的基础上将每一笔交易和收账款单据上传到区块链，同时引入第三方可信机构来确认这些信息的交易，本项目中的第三方即银行。同时，本项目还支持应收账款的转让，融资和清算等，让核心企业的信用可以传递到供应链的下游企业，减小中小企业的融资难度。
 
 ## 使用说明
 参见[使用说明](使用说明.md)
@@ -149,6 +153,35 @@ export const getBalance = async (privateKey:string):Promise<any> => {
 
 - 除了列表查询，各个接口的业务功能都能正常通过测试
 - 列表这里的问题暂时我们定位到了合约结果返回这里，结构体会被返回成十六进制串，需要我们进一步解析成相应的数据结构，正在解决
+
+虽然严格上来讲已经是过了中午12点的ddl了，但是呢，经过一番垂死挣扎，上述对于列表查询的bug也已经解决了。
+
+通过查阅底层的源码，可以发现路径``\server\node_modules\nodejs-sdk\packages\api\decoder\index.js``下，有对于合约输出的解码。其中主要涉及的是``createMethodDecoder``和``decodeOutput``两个函数。因而，只要根据那个对应的合约函数Abi，生成对应的解码器，再用这个解码器来对输出的16进制信息来解码，得到的就是我们想要的列表信息了。
+
+以获取借入票据为例：
+
+```
+export const getReceiptsInList = async (privateKey:string):Promise<any> => {
+    var filter = (result:any)=>{
+        console.log(result)
+        let abi = getAbi('getReceiptsInList');
+        let decoder = decode.createMethodDecoder(abi, null);
+        let res = decoder.decodeOutput(result.output).result[0];
+        console.log(res);
+        return res;
+    };
+    fs.writeFileSync(companyFile, privateKey);
+    var config_temp = new Configuration(configFile);
+    var web3jService_Temp = new Web3jService(config_temp);
+    return web3jService_Temp.sendRawTransaction(contractAddress,getAbi('getReceiptsInList'),[],"company").then(filter);
+}
+```
+
+这么一来，前面所提的列表查询bug就迎刃而解了。
+
+![](./assert/6.png)
+
+![](./assert/7.png)
 
 ## 实验心得
 
