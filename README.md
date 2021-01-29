@@ -179,9 +179,9 @@ export const getReceiptsInList = async (privateKey:string):Promise<any> => {
 
 这么一来，前面所提的列表查询bug就迎刃而解了。
 
-![](./assert/6.png)
+![列表1](./assert/6.png)
 
-![](./assert/7.png)
+![列表2](./assert/7.png)
 
 ## 实验心得
 
